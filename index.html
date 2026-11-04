@@ -1218,7 +1218,7 @@ canvas.addEventListener('pointercancel',onUp);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(!e.target.closest||!e.target.closest('.sheet'))e.preventDefault();},{passive:false});
 $('go').addEventListener('click',goPlay);
-$('cardgo').addEventListener('click',e=>{Sound.init();wake();const n=+e.currentTarget.dataset.level;S.day=1;setupRun(n);});
+$('cardgo').addEventListener('click',e=>{Sound.init();wake();const n=+e.currentTarget.dataset.level;if(!n){goHome();return;}S.day=1;setupRun(n);});
 const openPoem=()=>{hideSheets();$('poem').hidden=false;};
 $('poembtn').addEventListener('click',openPoem);$('cardpoem').addEventListener('click',openPoem);
 $('poemback').addEventListener('click',goHome);
