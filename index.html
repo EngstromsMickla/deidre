@@ -572,17 +572,17 @@ function refreshCells(){
     const c={};cells.set(k,c);
     if(hash2(a+.5,b+13.5)<.32)continue;
     const x=(a+.15+.7*hash2(a+3,b+1))*CELL,z=(b+.15+.7*hash2(a+1,b+7))*CELL;
-    const t={x,z,r:lerp(88,120,hash2(a,b)),w:lerp(7,10,hash2(b+2,a+2))};c.t=t;
+    const t={x,z,r:lerp(92,126,hash2(a,b)),w:lerp(10,13.5,hash2(b+2,a+2))};c.t=t;
     c.cloud=new T.Sprite(cloudMats[(a+b*3&7)%3]);c.cloud.position.set(x,lerp(452,510,hash2(a+7,b)),z);c.cloud.scale.set(250,125,1);scene.add(c.cloud);
     if(G.birds&&hash2(a+9,b+4)<.8){
       let ex=x,ez=z,ey=0,ok=false;
       if(G.wind){
         let top=0;for(let q=0;q<7;q++){const px=(a+hash2(q,a))*CELL,pz=(b+hash2(b,q+2))*CELL,h=H(px,pz);if(h>top){top=h;ex=px;ez=pz;}}
-        ok=top>150;ey=top+lerp(55,115,hash2(a+4,b+4));
+        ok=top>115;ey=top+lerp(35,85,hash2(a+4,b+4));
       }else{const h=H(x,z);ok=h<130;ey=Math.min(Math.max(h+70,120),195);}
       if(ok){
         const e={cell:c,t:{x:ex,z:ez,r:90},m:new T.Mesh(BIRD,eagleMat),ang:hash2(a,b+8)*PI*2,dir:hash2(b,a)>.5?1:-1,alive:true,y:ey,flee:0,cd:0};
-        e.m.scale.setScalar(3.1);e.m.rotation.order='YXZ';scene.add(e.m);c.e=e;
+        e.m.scale.setScalar(4.6);e.m.rotation.order='YXZ';scene.add(e.m);c.e=e;
       }
     }
   }
@@ -596,7 +596,7 @@ function thermal(x,y,z){let w=0;
   return w;}
 function ridge(x,y,z){
   const ux=x-wind.x*2,uz=z-wind.z*2,h=H(ux,uz),gx=(H(ux+10,uz)-H(ux-10,uz))/20,gz=(H(ux,uz+10)-H(ux,uz-10))/20;
-  const w=(wind.x*gx+wind.z*gz)*1.7;return (w>0?w:w*.45)*Math.exp(-Math.max(y-h,0)/75);
+  const w=(wind.x*gx+wind.z*gz)*2.5;return (w>0?w:w*.45)*Math.exp(-Math.max(y-h,0)/75);
 }
 
 /* ---------- Storms ---------- */
@@ -633,31 +633,37 @@ function lightning(d,s){
 /* ---------- Flocks ---------- */
 const flocks=[];
 function spawnFlock(){
-  const a=S.yaw+rnd(-.8,.8),d=rnd(320,620),x=S.x-Math.sin(a)*d,z=S.z-Math.cos(a)*d,y=ground(x,z)+rnd(36,130),b=rnd(0,PI*2),birds=[],dove=Math.random()<.4;
-  for(let i=0;i<7;i++){const m=new T.Mesh(BIRD,dove?doveMat:birdMat);m.scale.setScalar(1.25);m.rotation.order='YXZ';scene.add(m);
-    birds.push({m,ox:rnd(-16,16),oy:rnd(-6,6),oz:rnd(-16,16),ph:rnd(0,6),x:0,y:0,z:0,vx:0,vy:0,vz:0,dead:false});}
-  flocks.push({x,y,z,dir:b,scared:false,t:0,birds});
+  const a=S.yaw+rnd(-.6,.6),d=rnd(230,480),x=S.x-Math.sin(a)*d,z=S.z-Math.cos(a)*d,gh=ground(x,z),y=Math.max(gh+45,Math.min(S.y+rnd(-40,25),gh+190)),b=rnd(0,PI*2),birds=[],dove=Math.random()<.4;
+  for(let i=0;i<7;i++){const m=new T.Mesh(BIRD,dove?doveMat:birdMat);m.scale.setScalar(1.9);m.rotation.order='YXZ';scene.add(m);
+    birds.push({m,ox:rnd(-11,11),oy:rnd(-4,4),oz:rnd(-11,11),ph:rnd(0,6),x:0,y:0,z:0,vx:0,vy:0,vz:0,dead:false});}
+  flocks.push({x,y,z,agl:y-gh,dir:b,scared:false,t:0,birds});
 }
 function updateFlocks(dt){
-  if(S.mode==='play'&&G.birds&&flocks.length<5&&Math.random()<dt*.9)spawnFlock();
+  if(S.mode==='play'&&G.birds){
+    const ahead=flocks.filter(F=>!F.scared&&Math.hypot(F.x-S.x,F.z-S.z)<650&&(F.x-S.x)*-Math.sin(S.yaw)+(F.z-S.z)*-Math.cos(S.yaw)>0).length;
+    if(ahead<2&&flocks.length<6&&Math.random()<dt*1.6)spawnFlock();
+  }
   for(let f=flocks.length-1;f>=0;f--){
     const F=flocks[f];F.t+=dt;
-    F.dir+=Math.sin(F.t*.4+f)*dt*.3;F.x-=Math.sin(F.dir)*11*dt;F.z-=Math.cos(F.dir)*11*dt;
+    F.dir+=Math.sin(F.t*.4+f)*dt*.3;
+    if(H(F.x-Math.sin(F.dir)*90,F.z-Math.cos(F.dir)*90)>F.y-12)F.dir+=dt*1.8;
+    F.x-=Math.sin(F.dir)*11*dt;F.z-=Math.cos(F.dir)*11*dt;
+    F.y+=(ground(F.x,F.z)+F.agl-F.y)*Math.min(1,dt*.9);
     const dF=Math.hypot(F.x-S.x,F.y-S.y,F.z-S.z);
-    if(!F.scared&&(dF<26||(S.flapping&&dF<120))){F.scared=true;F.st=0;F.birds.forEach(b=>{const a=rnd(0,PI*2);b.vx=Math.cos(a)*25;b.vz=Math.sin(a)*25;b.vy=rnd(8,18);});}
+    if(!F.scared&&(dF<9||(S.flapping&&dF<85))){F.scared=true;F.st=0;F.birds.forEach(b=>{const a=rnd(0,PI*2);b.vx=Math.cos(a)*17;b.vz=Math.sin(a)*17;b.vy=rnd(6,14);});}
     let alive=0;
     F.birds.forEach(b=>{
       if(b.dead)return;alive++;
-      if(F.scared){b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;}else{b.x=F.x+b.ox;b.y=F.y+b.oy+Math.sin(F.t+b.ph)*2;b.z=F.z+b.oz;}
-      b.m.position.set(b.x,b.y,b.z);b.m.scale.y=1.25*Math.sin(F.t*(F.scared?22:13)+b.ph);
+      if(F.scared){b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;const g=ground(b.x,b.z)+10;if(b.y<g)b.y=g;}else{b.x=F.x+b.ox;b.y=F.y+b.oy+Math.sin(F.t+b.ph)*2;b.z=F.z+b.oz;}
+      b.m.position.set(b.x,b.y,b.z);b.m.scale.y=1.9*Math.sin(F.t*(F.scared?22:13)+b.ph);
       b.m.rotation.y=F.scared?Math.atan2(-b.vx,-b.vz):F.dir;
-      if(S.mode==='play'&&Math.hypot(b.x-S.x,b.y-S.y,b.z-S.z)<7){
+      if(S.mode==='play'&&Math.hypot(b.x-S.x,b.y-S.y,b.z-S.z)<10){
         b.dead=true;scene.remove(b.m);S.birds++;score(PTS.bird);S.stam=Math.min(maxStam(),S.stam+.1);Sound.gulp();
         for(let i=0;i<7;i++)spark(b.x,b.y,b.z,S.vx*.6+rnd(-7,7),rnd(-2,7),S.vz*.6+rnd(-7,7),rnd(.7,1.3),.36,0xf7efdd,7);
         if(S.birds===1)toast('Yum. Birds restore stamina.'+pts(PTS.bird));
       }
     });
-    if(!alive||dF>1400||(F.scared&&F.t>60)||(F.scared&&(F.st=(F.st||0)+dt)>6)){F.birds.forEach(b=>{if(!b.dead)scene.remove(b.m);});flocks.splice(f,1);}
+    if(!alive||dF>850||(F.scared&&F.t>60)||(F.scared&&(F.st=(F.st||0)+dt)>6)){F.birds.forEach(b=>{if(!b.dead)scene.remove(b.m);});flocks.splice(f,1);}
   }
 }
 function updateEagles(dt){
@@ -669,10 +675,10 @@ function updateEagles(dt){
     if(e.flee>0){e.flee-=dt;e.fx+=e.fvx*dt;e.fz+=e.fvz*dt;e.y+=7*dt;px=e.fx;pz=e.fz;py=e.y;e.m.rotation.y=Math.atan2(-e.fvx,-e.fvz);e.m.rotation.z=0;if(e.flee<=0){e.m.visible=false;e.alive=false;}}
     else{e.ang+=e.dir*dt*.42;const r=e.t.r*.62;px=e.t.x+Math.cos(e.ang)*r;pz=e.t.z+Math.sin(e.ang)*r;py=e.y+Math.sin(e.ang*.5)*7;
       e.m.rotation.y=Math.atan2(Math.sin(e.ang)*e.dir,-Math.cos(e.ang)*e.dir);e.m.rotation.z=e.dir*.5;}
-    e.m.position.set(px,py,pz);e.m.scale.y=3.1*(.4+.14*Math.sin(S.time*5+e.ang));
-    if(S.mode==='play'&&e.flee<=0&&e.cd<=0&&Math.hypot(px-S.x,py-S.y,pz-S.z)<9){
+    e.m.position.set(px,py,pz);e.m.scale.y=4.6*(.4+.14*Math.sin(S.time*5+e.ang));
+    if(S.mode==='play'&&e.flee<=0&&e.cd<=0&&Math.hypot(px-S.x,py-S.y,pz-S.z)<13){
       e.cd=6;
-      if(-S.vy>7||S.v>44){
+      if(-S.vy>5||S.v>40){
         e.alive=false;scene.remove(e.m);S.eagles++;S.stam=maxStam();S.tired=false;Sound.gulp();score(PTS.eagle);addHoard('an eagle feather');
         for(let i=0;i<16;i++)spark(px,py,pz,rnd(-11,11),rnd(-3,11),rnd(-11,11),rnd(.9,1.8),.46,0x7b5230,7);
         toast('She caught a whole eagle. Nobody is more surprised than she is.'+pts(PTS.eagle));
@@ -872,7 +878,7 @@ const LEVELS=[
  {wind:true,birds:false,knights:false,limit:180,goal:'Reach the gold pennant on the peak.',
   tip:'Flapping will not take her over the mountains. Blue strokes and faster beeps show rising air, and she can circle in it. The edge of a storm lifts her; its heart drags her down.'},
  {wind:true,birds:true,knights:false,limit:180,goal:'Catch 5 birds and 1 eagle.',
-  tip:'Glide in silent, because flapping scares birds away. Eagles circle by the mountains. Take them from above, at speed, or they strike back.'},
+  tip:'Glide in silent, because flapping scares birds away. Then the arrow leads to the eagles by the mountains. Take them from above, at speed, or they strike back.'},
  {wind:true,birds:true,knights:true,limit:180,goal:'Soot 3 knights and fetch 2 treasures.',
   tip:'Get close and she sneezes. A rising trumpet means a knight stands and shoots from ahead; a falling one means he runs. Go back low for what they drop.'}];
 function goalText(){
@@ -914,7 +920,7 @@ function showCard(n){
 function checkGoal(){
   if(!G.level||S.mode!=='play')return;
   let done=false;
-  if(G.level<3&&goal.on)done=Math.hypot(goal.x-S.x,goal.z-S.z)<36&&Math.abs(S.y-(goal.y+22))<55;
+  if(G.level<3&&goal.on)done=Math.hypot(goal.x-S.x,goal.z-S.z)<46&&S.y>goal.y-8;
   if(G.level===3)done=S.birds>=5&&S.eagles>=1;
   if(G.level===4)done=S.soot>=3&&S.loot>=2;
   if(!done)return;
@@ -1004,7 +1010,7 @@ function flight(dt){
 
   let air=G.wind?thermal(S.x,S.y,S.z)+ridge(S.x,S.y,S.z):0;
   if(S.stormF>0)air-=9*S.stormF;
-  air+=6.5*S.stormEdge;
+  air+=9*S.stormEdge;
   if(S.y>CEILING)air*=clamp(1-(S.y-CEILING)/60,0,1);
   S.air=air;
   wind.a+=dt*.004;wind.x=Math.cos(wind.a)*wind.sp;wind.z=Math.sin(wind.a)*wind.sp;
@@ -1091,7 +1097,7 @@ function markTargets(){
   if(glints.length&&(G.level===0||G.level===4)&&!(G.level===4&&S.loot>=2)){r.gold=true;r.always=false;glints.forEach(g=>r.list.push(g));return r;}
   if(G.level===3){
     if(S.birds<5)flocks.forEach(F=>{if(!F.scared)r.list.push({x:F.x,y:F.y,z:F.z});});
-    if(S.eagles<1)eagles.forEach(e=>{if(e.alive)r.list.push({x:e.t.x,y:e.y,z:e.t.z});});
+    else{r.always=true;eagles.forEach(e=>{if(e.alive)r.list.push({x:e.t.x,y:e.y,z:e.t.z});});}
   }else if(G.knights&&!(G.level===4&&S.soot>=3))knights.forEach(k=>{if(k.state!=='sooted')r.list.push({x:k.x,y:k.y+8,z:k.z});});
   return r;
 }
