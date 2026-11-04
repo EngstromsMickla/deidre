@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Deidre’s flight">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23ecdfc4'/%3E%3Ctext x='16' y='25' font-family='serif' font-size='26' font-weight='700' text-anchor='middle' fill='%23b3261e'%3ED%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya:ital@1&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <style>
 /* Layout: the world fills the screen; type sits on it like marginalia in a picture book. */
 :root{
@@ -56,6 +56,7 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 .toast.verse{font-style:italic;font-size:18px;animation-duration:4.5s}
 @keyframes fadeout{0%{opacity:0;transform:translateY(6px)}8%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
 #flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,var(--rubric));opacity:0}
+#mark[data-gold="1"]{border-left-color:var(--gold)}
 #mark{position:fixed;left:0;top:0;width:0;height:0;margin:-9px 0 0 -7px;border-style:solid;border-width:9px 0 9px 20px;border-color:transparent transparent transparent var(--rubric);pointer-events:none;filter:drop-shadow(0 0 1.5px var(--ink))}
 #stick{position:fixed;width:112px;height:112px;margin:-56px 0 0 -56px;border:1.5px solid rgba(42,32,24,.5);border-radius:50%;pointer-events:none;opacity:0;transition:opacity .15s}
 #knob{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border-radius:50%;background:rgba(42,32,24,.3)}
@@ -74,7 +75,25 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 .btn{font-family:var(--display);font-weight:700;font-size:32px;line-height:1;background:var(--rubric);color:var(--paper);border:0;border-radius:2px;padding:12px 34px 14px;cursor:pointer;touch-action:manipulation}
 .list{margin:0;padding:0;list-style:none;display:grid;gap:3px;max-height:34vh;overflow-y:auto;max-width:34em}
 .tally{margin:0;max-width:34em}
-.row{display:flex;flex-wrap:wrap;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.eyebrow{margin:0;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--sepia)}
+.st{margin:0;font-family:"Alegreya",Georgia,serif;font-style:italic;font-size:19.5px;line-height:1.3}
+.st::first-letter{font-family:var(--display);font-style:normal;font-weight:700;font-size:2.5em;line-height:.8;color:var(--rubric);float:left;padding-right:6px}
+.tip{margin:0;max-width:34em}
+.goalline{margin:0;font-weight:700;color:var(--rubric)}
+.opts{display:grid;gap:6px;border:0;margin:0;padding:0}
+.opts legend{padding:0;font-weight:700;color:var(--rubric);margin-bottom:4px}
+.opts label{display:flex;gap:9px;align-items:center}
+.opts input{width:20px;height:20px;accent-color:var(--rubric)}
+.link{background:none;border:0;padding:8px 0;font:inherit;color:var(--sepia);text-decoration:underline;cursor:pointer}
+.link:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.confirm{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;color:var(--rubric);font-weight:700}
+#poem{background:var(--paper);align-content:safe center;gap:10px}
+#poem h2{font-size:clamp(34px,10vw,56px)}
+#poemtext{display:grid;gap:9px}
+#poemtext .st{font-size:16.5px;line-height:1.24}
+#poemtext .st::first-letter{font-size:2.1em}
+.goalhud{font-weight:700;color:var(--rubric);font-size:16px;line-height:1.2}
 .btn.quiet{background:none;color:var(--rubric);box-shadow:inset 0 0 0 2px var(--rubric)}
 .endscore{margin:0;font-weight:700;font-size:22px;color:var(--rubric);display:flex;flex-wrap:wrap;gap:4px 14px}
 @media (prefers-reduced-motion:reduce){.toast{animation-duration:3.4s}}
@@ -89,7 +108,7 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 <div id="mark" hidden></div>
 <div id="hud" data-off="1">
   <div class="top">
-    <div class="scorebox"><div class="hoard" aria-label="Score"><i></i><span id="hoardn">0</span></div><div class="best" id="best">Best 0</div></div>
+    <div class="scorebox"><div class="goalhud" id="goalhud" hidden></div><div id="scorewrap"><div class="hoard" aria-label="Score"><i></i><span id="hoardn">0</span></div><div class="best" id="best">Best 0</div></div></div>
     <div class="sunline" aria-label="Time of day"><div id="sundot"></div></div>
     <div class="tools"><button id="snd" type="button">Sound on</button><button id="home" type="button">Home</button></div>
   </div>
@@ -107,18 +126,39 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
   <ul class="how">
     <li><b>Let go</b><span>She flaps, climbs and flies straight. It tires her.</span></li>
     <li><b>Hold</b><span>She glides quietly. Drag sideways to turn, towards you to lift her nose, away to dive.</span></li>
-    <li><b>Blue strokes</b><span>Rising air. Circle in it and she rests as she climbs.</span></li>
     <li><b>Sounds</b><span>Beeps mean rising air: faster beeps, stronger lift. The wind rises and falls with her speed.</span></li>
-    <li><b>Knights</b><span>Red pennants. A trumpet sounds when they spot her; a red arrow helps if you see none. Get close and she sneezes. Pick up what glints.</span></li>
-    <li><b>Score</b><span>Bird 2, knight 10, treasure 20, eagle 50. Nothing is deducted: fail and she flies worse.</span></li>
   </ul>
-  <button class="btn" id="go" type="button">Fly</button>
+  <fieldset class="opts" id="opts" hidden>
+    <legend>Share the sky with</legend>
+    <label><input type="checkbox" id="t-wind"> Wind and weather</label>
+    <label><input type="checkbox" id="t-birds"> Birds and eagles</label>
+    <label><input type="checkbox" id="t-knights"> Knights</label>
+  </fieldset>
+  <div class="row"><button class="btn" id="go" type="button">Fly</button><button class="btn quiet" id="poembtn" type="button" hidden>The poem</button></div>
+  <div id="overbox" hidden>
+    <button class="link" id="over" type="button">Start over</button>
+    <div class="confirm" id="confirm" hidden><span>Delete all progress and scores?</span><button class="link" id="yes" type="button">Delete</button><button class="link" id="no" type="button">Keep</button></div>
+  </div>
+</section>
+
+<section class="sheet" id="card" hidden>
+  <p class="eyebrow" id="cardeye"></p>
+  <p class="st" id="cardst"></p>
+  <p class="tip" id="cardtip"></p>
+  <p class="goalline" id="cardgoal"></p>
+  <div class="row"><button class="btn" id="cardgo" type="button">Fly</button><button class="btn quiet" id="cardpoem" type="button" hidden>The poem</button></div>
+</section>
+
+<section class="sheet" id="poem" hidden>
+  <h2>The Flight of Deidre</h2>
+  <div id="poemtext"></div>
+  <button class="btn" id="poemback" type="button">Back</button>
 </section>
 
 <section class="sheet" id="end" hidden>
   <h2 id="endh">Evening came</h2>
   <p class="verse-line">In tiny dragon sleep</p>
-  <p class="endscore"><span id="endscore">0 points</span> <span id="endbest"></span></p>
+  <p class="endscore"><span id="endscore"></span> <span id="endbest"></span></p>
   <p class="tally" id="tally"></p>
   <ul class="list" id="endlist"></ul>
   <div class="row"><button class="btn" id="again" type="button">New day</button><button class="btn quiet" id="home2" type="button">Home</button></div>
@@ -129,11 +169,14 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 (function(){
 'use strict';
 const T=THREE, PI=Math.PI, $=id=>document.getElementById(id);
+const G={level:0,wind:true,birds:false,knights:false};
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, sm=t=>t*t*(3-2*t), rnd=(a,b)=>a+Math.random()*(b-a);
 const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- Land ---------- */
-const WATER=12, CHUNK=320, SEG=26, RADIUS=3, CELL=520, DAY=180, CEILING=500;
+const WATER=12, CHUNK=320, SEG=26, RADIUS=3, CELL=520, CEILING=500, FLAP_CEIL=220;
+let DAY=180;
+const START={x:1100,z:-1500,yaw:-PI/2},GOAL1={x:2500,z:-1500},GOAL2={x:2040,z:-1842};
 function hash2(i,j){const s=Math.sin(i*127.1+j*311.7)*43758.5453;return s-Math.floor(s)}
 function vn(x,y){
   const i=Math.floor(x),j=Math.floor(y),u=sm(x-i),v=sm(y-j);
@@ -181,7 +224,7 @@ vec3 col=uTint*vC*mix(uShade,1.,smoothstep(.12,.6,l))*uDay;
 float c1=dot(vP,vec3(.46,.86,.22))*uScale,c2=dot(vP,vec3(-.62,.3,.72))*uScale,far=smoothstep(150.,330.,vD);
 col*=mix(1.,.64,t);
 float w1=min(t*.5,.3),h=mix(ln(c1/8.,w1),ln(c1/32.,w1*.32),far)*smoothstep(.02,.1,w1);
-float w2=min(max(t-.74,0.)*.9,.2)*(1.-uLow);
+float w2=min(max(t-.74,0.)*.9,.1)*(1.-uLow);
 float nr=1.-smoothstep(45.,105.,vD);h=mix(h,ln(c1/2.6,w1*.8)*smoothstep(.02,.1,w1),nr);
 h=max(h,ln(c2/8.,w2)*(1.-far)*(1.-nr)*smoothstep(.01,.08,w2));
 col=mix(col,uInk*uDay,h*mix(.8,.56,far));
@@ -487,7 +530,12 @@ const streaks=[];for(let i=0;i<SN;i++)streaks.push({l:0});let sIdx=0;
 function addStreak(x,y,z,vx,vy,vz,life){const s=streaks[sIdx];sIdx=(sIdx+1)%SN;Object.assign(s,{x,y,z,vx,vy,vz,l:life,L:life});}
 function updateStreaks(dt){
   const fx=-Math.sin(S.yaw),fz=-Math.cos(S.yaw);
-  for(let a=0;a<14;a++){
+  for(let a=0;a<(G.wind?14:0);a++){
+    if(storms.length&&Math.random()<.2){
+      const q=storms[0],ang=rnd(0,PI*2),r=q.r*rnd(1.05,1.35);
+      if(Math.hypot(q.x-S.x,q.z-S.z)<900)addStreak(q.x+Math.cos(ang)*r,rnd(Math.max(S.y-150,60),S.y+150),q.z+Math.sin(ang)*r,-Math.sin(ang)*6,20,Math.cos(ang)*6,rnd(1.2,2));
+      continue;
+    }
     const near=thermals.length&&Math.random()<.42;
     if(near){
       const t=thermals[Math.floor(Math.random()*thermals.length)];
@@ -516,7 +564,7 @@ const cells=new Map();let thermals=[],eagles=[],lastCell='';
 function birdGeo(){const g=new T.BufferGeometry();
   g.setAttribute('position',new T.Float32BufferAttribute([0,0,-.7, 1.5,.5,.25, 0,0,.45,  0,0,-.7, 0,0,.45, -1.5,.5,.25, 0,0,-.7, 0,-.08,.9, 0,.1,.2],3));g.computeVertexNormals();return g;}
 const BIRD=birdGeo();
-const birdMat=new T.MeshBasicMaterial({color:INK,side:T.DoubleSide}),eagleMat=new T.MeshBasicMaterial({color:0x4a2c18,side:T.DoubleSide});
+const birdMat=new T.MeshBasicMaterial({color:INK,side:T.DoubleSide}),eagleMat=new T.MeshBasicMaterial({color:0x4a2c18,side:T.DoubleSide}),doveMat=new T.MeshBasicMaterial({color:0xfbf6ea,side:T.DoubleSide});
 function refreshCells(){
   const ci=Math.floor(S.x/CELL),cj=Math.floor(S.z/CELL),key=ci+','+cj;if(key===lastCell)return;lastCell=key;
   for(let j=-2;j<=2;j++)for(let i=-2;i<=2;i++){
@@ -526,9 +574,16 @@ function refreshCells(){
     const x=(a+.15+.7*hash2(a+3,b+1))*CELL,z=(b+.15+.7*hash2(a+1,b+7))*CELL;
     const t={x,z,r:lerp(88,120,hash2(a,b)),w:lerp(7,10,hash2(b+2,a+2))};c.t=t;
     c.cloud=new T.Sprite(cloudMats[(a+b*3&7)%3]);c.cloud.position.set(x,lerp(452,510,hash2(a+7,b)),z);c.cloud.scale.set(250,125,1);scene.add(c.cloud);
-    if(hash2(a+9,b+4)<.62){
-      const e={cell:c,t,m:new T.Mesh(BIRD,eagleMat),ang:hash2(a,b+8)*PI*2,dir:hash2(b,a)>.5?1:-1,alive:true,y:Math.max(H(x,z)+95,150)+hash2(a+4,b+4)*150,flee:0,cd:0};
-      e.m.scale.setScalar(3.1);e.m.rotation.order='YXZ';scene.add(e.m);c.e=e;
+    if(G.birds&&hash2(a+9,b+4)<.8){
+      let ex=x,ez=z,ey=0,ok=false;
+      if(G.wind){
+        let top=0;for(let q=0;q<7;q++){const px=(a+hash2(q,a))*CELL,pz=(b+hash2(b,q+2))*CELL,h=H(px,pz);if(h>top){top=h;ex=px;ez=pz;}}
+        ok=top>150;ey=top+lerp(55,115,hash2(a+4,b+4));
+      }else{const h=H(x,z);ok=h<130;ey=Math.min(Math.max(h+70,120),195);}
+      if(ok){
+        const e={cell:c,t:{x:ex,z:ez,r:90},m:new T.Mesh(BIRD,eagleMat),ang:hash2(a,b+8)*PI*2,dir:hash2(b,a)>.5?1:-1,alive:true,y:ey,flee:0,cd:0};
+        e.m.scale.setScalar(3.1);e.m.rotation.order='YXZ';scene.add(e.m);c.e=e;
+      }
     }
   }
   cells.forEach((c,k)=>{const p=k.split(',');
@@ -556,16 +611,17 @@ function spawnStorm(){
   g.position.set(x,0,z);scene.add(g);storms.push({x,z,r,g});
 }
 function updateStorms(dt){
-  S.stormF=0;
+  S.stormF=0;S.stormEdge=0;
   for(let i=storms.length-1;i>=0;i--){
     const s=storms[i];s.x+=wind.x*1.2*dt;s.z+=wind.z*1.2*dt;s.g.position.set(s.x,0,s.z);
     const d=Math.hypot(s.x-S.x,s.z-S.z);
     S.stormF=Math.max(S.stormF,clamp(1-d/s.r,0,1));
+    S.stormEdge=Math.max(S.stormEdge,clamp(1-Math.abs(d-s.r*1.2)/(s.r*.28),0,1));
     if(d>1500){scene.remove(s.g);s.g.children[0].geometry.dispose();s.g.children[1].geometry.dispose();storms.splice(i,1);}
     else if(d<800&&Math.random()<dt/6.5)lightning(d,s);
   }
   S.lightning=Math.max(0,S.lightning-dt*5);
-  if(S.mode==='play'){stormT-=dt;if(stormT<0&&storms.length<2){spawnStorm();stormT=rnd(30,55);}}
+  if(S.mode==='play'&&G.wind){stormT-=dt;if(stormT<0&&storms.length<2){spawnStorm();stormT=rnd(30,55);}}
   const f=S.stormF;
   if(f>0){for(let i=0;i<f*14;i++)spark(S.x+rnd(-40,40)+Math.sin(S.yaw)*-30,S.y+rnd(10,40),S.z+rnd(-40,40)-Math.cos(S.yaw)*30,wind.x,-62,wind.z,.9,.13,INK);}
 }
@@ -577,13 +633,13 @@ function lightning(d,s){
 /* ---------- Flocks ---------- */
 const flocks=[];
 function spawnFlock(){
-  const a=S.yaw+rnd(-.8,.8),d=rnd(320,620),x=S.x-Math.sin(a)*d,z=S.z-Math.cos(a)*d,y=ground(x,z)+rnd(36,130),b=rnd(0,PI*2),birds=[];
-  for(let i=0;i<7;i++){const m=new T.Mesh(BIRD,birdMat);m.scale.setScalar(1.25);m.rotation.order='YXZ';scene.add(m);
+  const a=S.yaw+rnd(-.8,.8),d=rnd(320,620),x=S.x-Math.sin(a)*d,z=S.z-Math.cos(a)*d,y=ground(x,z)+rnd(36,130),b=rnd(0,PI*2),birds=[],dove=Math.random()<.4;
+  for(let i=0;i<7;i++){const m=new T.Mesh(BIRD,dove?doveMat:birdMat);m.scale.setScalar(1.25);m.rotation.order='YXZ';scene.add(m);
     birds.push({m,ox:rnd(-16,16),oy:rnd(-6,6),oz:rnd(-16,16),ph:rnd(0,6),x:0,y:0,z:0,vx:0,vy:0,vz:0,dead:false});}
   flocks.push({x,y,z,dir:b,scared:false,t:0,birds});
 }
 function updateFlocks(dt){
-  if(S.mode==='play'&&flocks.length<5&&Math.random()<dt*.9)spawnFlock();
+  if(S.mode==='play'&&G.birds&&flocks.length<5&&Math.random()<dt*.9)spawnFlock();
   for(let f=flocks.length-1;f>=0;f--){
     const F=flocks[f];F.t+=dt;
     F.dir+=Math.sin(F.t*.4+f)*dt*.3;F.x-=Math.sin(F.dir)*11*dt;F.z-=Math.cos(F.dir)*11*dt;
@@ -598,7 +654,7 @@ function updateFlocks(dt){
       if(S.mode==='play'&&Math.hypot(b.x-S.x,b.y-S.y,b.z-S.z)<7){
         b.dead=true;scene.remove(b.m);S.birds++;score(PTS.bird);S.stam=Math.min(maxStam(),S.stam+.1);Sound.gulp();
         for(let i=0;i<7;i++)spark(b.x,b.y,b.z,S.vx*.6+rnd(-7,7),rnd(-2,7),S.vz*.6+rnd(-7,7),rnd(.7,1.3),.36,0xf7efdd,7);
-        if(S.birds===1)toast('Yum. Birds restore stamina. +'+PTS.bird);
+        if(S.birds===1)toast('Yum. Birds restore stamina.'+pts(PTS.bird));
       }
     });
     if(!alive||dF>1400||(F.scared&&F.t>60)||(F.scared&&(F.st=(F.st||0)+dt)>6)){F.birds.forEach(b=>{if(!b.dead)scene.remove(b.m);});flocks.splice(f,1);}
@@ -608,6 +664,7 @@ function updateEagles(dt){
   for(const e of eagles){
     if(!e.alive)continue;
     if(e.cd>0)e.cd-=dt;
+    if(S.mode==='play'&&S.time-S.lastCry>16&&Math.hypot(e.t.x-S.x,e.t.z-S.z)<300){S.lastCry=S.time;Sound.cry();}
     let px,pz,py;
     if(e.flee>0){e.flee-=dt;e.fx+=e.fvx*dt;e.fz+=e.fvz*dt;e.y+=7*dt;px=e.fx;pz=e.fz;py=e.y;e.m.rotation.y=Math.atan2(-e.fvx,-e.fvz);e.m.rotation.z=0;if(e.flee<=0){e.m.visible=false;e.alive=false;}}
     else{e.ang+=e.dir*dt*.42;const r=e.t.r*.62;px=e.t.x+Math.cos(e.ang)*r;pz=e.t.z+Math.sin(e.ang)*r;py=e.y+Math.sin(e.ang*.5)*7;
@@ -618,7 +675,7 @@ function updateEagles(dt){
       if(-S.vy>7||S.v>44){
         e.alive=false;scene.remove(e.m);S.eagles++;S.stam=maxStam();S.tired=false;Sound.gulp();score(PTS.eagle);addHoard('an eagle feather');
         for(let i=0;i<16;i++)spark(px,py,pz,rnd(-11,11),rnd(-3,11),rnd(-11,11),rnd(.9,1.8),.46,0x7b5230,7);
-        toast('She caught a whole eagle. Nobody is more surprised than she is. +'+PTS.eagle);
+        toast('She caught a whole eagle. Nobody is more surprised than she is.'+pts(PTS.eagle));
       }else{
         wound('The eagle struck back. Attack from above, at speed.');
         e.flee=7;e.fx=px;e.fz=pz;const a=rnd(0,PI*2);e.fvx=Math.cos(a)*24;e.fvz=Math.sin(a)*24;
@@ -644,7 +701,7 @@ const riderGeo=merged([
   {g:ICO,m:M(0,.82,0,0,0,0,.2,.22,.2),c:0xf4eddc},
   box(.05,.28,.34,0,1.08,.04,0xb3261e),
   box(.13,.5,.13,-.27,.3,0,0xf4eddc),box(.13,.5,.13,.27,.3,0,0xf4eddc),
-  box(.42,.1,.1,.0,.42,-.42,0x4a3628),box(.06,.06,.6,0,.44,-.3,0x4a3628),
+  box(.05,.95,.07,-.3,.5,-.26,0x4a3628),box(.05,.05,.5,-.15,.42,-.2,0x4a3628),
   box(.06,3.4,.06,.18,1.55,.2,0x6b5a48)]);
 const pennantGeo=new T.BufferGeometry();
 pennantGeo.setAttribute('position',new T.Float32BufferAttribute([0,0,0, 0,.7,0, 0,.35,1.5],3));pennantGeo.computeVertexNormals();
@@ -662,7 +719,7 @@ function spawnKnight(){
   }
 }
 function updateKnights(dt){
-  if(S.mode==='play'){
+  if(S.mode==='play'&&G.knights){
     const ahead=knights.filter(k=>k.state!=='sooted'&&Math.hypot(k.x-S.x,k.z-S.z)<800&&(k.x-S.x)*-Math.sin(S.yaw)+(k.z-S.z)*-Math.cos(S.yaw)>0).length;
     if(ahead<KNIGHTS_AHEAD&&knights.length<5&&Math.random()<dt*.7)spawnKnight();
   }
@@ -704,7 +761,7 @@ function updateKnights(dt){
   for(let i=bolts.length-1;i>=0;i--){
     const b=bolts[i];b.l-=dt;b.m.position.x+=b.vx*dt;b.m.position.y+=b.vy*dt;b.m.position.z+=b.vz*dt;
     const p=b.m.position;
-    if(Math.hypot(p.x-S.x,p.y-S.y,p.z-S.z)<4.2){wound('A crossbow bolt hit her. Turn when they take aim.');b.l=0;}
+    if(Math.hypot(p.x-S.x,p.y-S.y,p.z-S.z)<4.2){wound('An arrow hit her. Turn when they take aim.');b.l=0;}
     if(b.l<=0||p.y<H(p.x,p.z)){scene.remove(b.m);bolts.splice(i,1);}
   }
   for(let i=glints.length-1;i>=0;i--){
@@ -712,7 +769,7 @@ function updateKnights(dt){
     if(Math.random()<dt*5)spark(g.x+rnd(-2,2),g.y+rnd(0,6),g.z+rnd(-2,2),0,rnd(2,5),0,.8,.3,0xd9a520);
     const h=Math.hypot(g.x-S.x,g.z-S.z);
     g.arm-=dt;
-    if(g.arm<=0&&h<20&&S.y-g.y<34){addHoard(g.name);score(PTS.loot);toast('To the hoard: '+g.name+'. +'+PTS.loot);Sound.chime();scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();glints.splice(i,1);continue;}
+    if(g.arm<=0&&h<20&&S.y-g.y<34){addHoard(g.name);S.loot++;score(PTS.loot);toast('To the hoard: '+g.name+'.'+pts(PTS.loot));Sound.chime();scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();glints.splice(i,1);continue;}
     if(g.l<=0){scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();glints.splice(i,1);}
   }
 }
@@ -735,7 +792,7 @@ function sneeze(){
     k.state='sooted';k.horse.material=sootMat;k.body.material=sootMat;S.soot++;score(PTS.soot);
     for(let i=0;i<20;i++)spark(k.x,k.y+rnd(2,9),k.z,rnd(-8,8),rnd(3,13),rnd(-8,8),rnd(.8,1.7),rnd(.8,1.8),0x2f2b27,-1);
     const name=ITEMS[Math.floor(Math.random()*ITEMS.length)];dropGlint(k.x,k.y,k.z,name);
-    toast(k.name+' sooted. Something fell. +'+PTS.soot);
+    toast(k.name+' sooted. Something fell.'+pts(PTS.soot));
     if(S.soot===1)toast("A spark of dragon's breath",'verse');
   }else if(!k||d>=46)toast('She sneezed at nothing.');
 }
@@ -746,21 +803,45 @@ function dropGlint(x,y,z,name){
   beam.position.set(x,y+35,z);scene.add(beam);glints.push({x,y,z,m,beam,name,l:90,arm:1.6});
 }
 
+/* ---------- Gold pennant for the first two levels ---------- */
+const goal={on:false,x:0,y:0,z:0,g:new T.Group(),f:null};
+(function(){
+  const gold=new T.MeshBasicMaterial({color:0xd9a520,side:T.DoubleSide,fog:false});
+  const pole=new T.Mesh(BOX,new T.MeshBasicMaterial({color:INK,fog:false}));pole.scale.set(.7,44,.7);pole.position.y=22;goal.g.add(pole);
+  goal.f=new T.Mesh(pennantGeo,gold);goal.f.position.y=26;goal.f.scale.setScalar(12);goal.g.add(goal.f);
+  goal.g.visible=false;scene.add(goal.g);
+})();
+function placeGoal(p){goal.on=true;goal.x=p.x;goal.z=p.z;goal.y=H(p.x,p.z);goal.g.position.set(p.x,goal.y,p.z);goal.g.visible=true;goal.g.scale.setScalar(1);}
+function updateGoal(){
+  if(!goal.on)return;
+  goal.f.rotation.y=Math.sin(S.time*5)*.3+Math.PI/2;
+  goal.g.scale.setScalar(clamp(Math.hypot(goal.x-S.x,goal.z-S.z)/240,1,4.5));
+  if(Math.random()<.2)spark(goal.x+rnd(-3,3),goal.y+rnd(6,44),goal.z+rnd(-3,3),0,rnd(2,5),0,.8,.32,0xd9a520);
+}
+
 /* ---------- Game state ---------- */
-const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam:1,tired:false,wounds:0,side:1,inv:0,day:1,t:28,time:0,score:0,beat:false,startBest:0,
+const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam:1,tired:false,wounds:0,side:1,inv:0,day:1,t:28,time:0,score:0,beat:false,startBest:0,loot:0,stormEdge:0,finT:0,lastCry:-99,
   hoard:[],soot:0,birds:0,eagles:0,sneezeCd:0,sneezeW:0,sneezeK:null,sneezeAnim:0,lastSeen:0,flapping:false,flapPh:0,flap:0,air:0,stormF:0,lightning:0,near:null,seen:0,scrape:0,hinted:false};
 const input={down:false,dx:0,dy:0,x0:0,y0:0,id:null};
 const maxStam=()=>1-.2*S.wounds;
-const PTS={bird:2,soot:10,loot:20,eagle:50};
-let best=0;try{best=+localStorage.getItem('deidre-best')||0;}catch(e){}
-function showScore(){$('hoardn').textContent=S.score;$('best').textContent='Best '+best;}
+const PTS={bird:2,soot:10,loot:20,eagle:50},SAVE='deidre-flight-2';
+const pts=n=>G.level?'':' +'+n;
+let prog={level:1,opts:{wind:true,birds:true,knights:true},best:{}};
+try{const q=JSON.parse(localStorage.getItem(SAVE));if(q&&q.level)prog=Object.assign(prog,q);}catch(e){}
+function save(){try{localStorage.setItem(SAVE,JSON.stringify(prog));}catch(e){}}
+const comboKey=()=>(G.wind?'w':'')+(G.birds?'b':'')+(G.knights?'k':'')||'none';
+let best=0;
+function showScore(){
+  $('hoardn').textContent=S.score;$('best').textContent='Best '+best;
+  $('scorewrap').hidden=!!G.level;$('goalhud').hidden=!G.level;
+}
 function score(n){
-  if(S.mode!=='play')return;
+  if(S.mode!=='play'||G.level)return;
   S.score+=n;
   if(S.score>best){
     if(S.startBest>0&&!S.beat)toast('New best!');
     if(S.startBest>0)S.beat=true;
-    best=S.score;try{localStorage.setItem('deidre-best',String(best));}catch(e){}
+    best=S.score;prog.best[comboKey()]=best;save();
   }
   showScore();
 }
@@ -779,52 +860,138 @@ function wound(msg){
   for(let i=0;i<14;i++)spark(S.x,S.y,S.z,S.vx*.7+rnd(-9,9),S.vy*.7+rnd(-9,9),S.vz*.7+rnd(-9,9),rnd(.5,1.1),.34,0xf0a24a,6);
   if(S.wounds>=3)setTimeout(()=>endDay(true),900);
 }
+const POEM=[
+ ['A tiny serpent, born to fly','May dread the sky turned grey','But trust her urge, there is no why','This glorious first day'],
+ ['She’ll ride the wind, the storm is hers','She’ll shun the forest floor','When thunder rolls cast off her spurs','And ride the wind to soar'],
+ ['By mountains high, where eagles cry','She’ll hunt the finch and dove','But if she passes eagles by','She’ll catch them from above'],
+ ['Then knights come riding, bows and spears','With gold and gifts to use','Some brave, some showing signs of fear','Not all they have to lose!'],
+ ['The days go by, and still she flies','Her ever-upward climb','As dragons will—so say the wise','Until the end of time']];
+const LEVELS=[
+ {wind:false,birds:false,knights:false,limit:120,goal:'Reach the gold pennant before evening.',
+  tip:'Flapping lifts her only so far: the air is thin above the valleys. Stay between the mountains and follow the arrow.'},
+ {wind:true,birds:false,knights:false,limit:180,goal:'Reach the gold pennant on the peak.',
+  tip:'Flapping will not take her over the mountains. Blue strokes and faster beeps show rising air, and she can circle in it. The edge of a storm lifts her; its heart drags her down.'},
+ {wind:true,birds:true,knights:false,limit:180,goal:'Catch 5 birds and 1 eagle.',
+  tip:'Glide in silent, because flapping scares birds away. Eagles circle by the mountains. Take them from above, at speed, or they strike back.'},
+ {wind:true,birds:true,knights:true,limit:180,goal:'Soot 3 knights and fetch 2 treasures.',
+  tip:'Get close and she sneezes. A rising trumpet means a knight stands and shoots from ahead; a falling one means he runs. Go back low for what they drop.'}];
+function goalText(){
+  if(G.level===1)return 'Gold pennant';
+  if(G.level===2)return 'Pennant on the peak';
+  if(G.level===3)return 'Birds '+Math.min(S.birds,5)+'/5, eagle '+Math.min(S.eagles,1)+'/1';
+  return 'Sooted '+Math.min(S.soot,3)+'/3, treasure '+Math.min(S.loot,2)+'/2';
+}
+const hideSheets=()=>['start','card','poem','end'].forEach(i=>{$(i).hidden=true;});
+function clearWorld(){
+  flocks.forEach(F=>F.birds.forEach(b=>{if(!b.dead)scene.remove(b.m);}));flocks.length=0;
+  knights.forEach(k=>scene.remove(k.g));knights.length=0;
+  bolts.forEach(b=>scene.remove(b.m));bolts.length=0;
+  glints.forEach(g=>{scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();});glints.length=0;
+  storms.forEach(q=>{scene.remove(q.g);q.g.children[0].geometry.dispose();q.g.children[1].geometry.dispose();});storms.length=0;
+  cells.forEach(c=>{if(c.cloud)scene.remove(c.cloud);if(c.e)scene.remove(c.e.m);});cells.clear();lastCell='';
+  stormT=24;goal.on=false;goal.g.visible=false;
+}
+function setupRun(lv){
+  G.level=lv;
+  if(lv){const L=LEVELS[lv-1];G.wind=L.wind;G.birds=L.birds;G.knights=L.knights;DAY=L.limit;}
+  else{Object.assign(G,prog.opts);DAY=180;}
+  clearWorld();
+  S.x=START.x;S.z=START.z;S.yaw=START.yaw;S.y=Math.min(190,ground(S.x,S.z)+120);S.pitch=0;S.bank=0;S.v=30;
+  S.t=0;S.wounds=0;S.inv=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.loot=0;S.score=0;S.beat=false;S.hoard=[];S.lastSeen=S.time;S.stormF=0;S.stormEdge=0;
+  best=lv?0:(prog.best[comboKey()]||0);S.startBest=best;
+  cam.yaw=S.yaw;cam.y=S.y+5;
+  refreshCells();updateChunks(64);
+  if(lv===1)placeGoal(GOAL1);if(lv===2)placeGoal(GOAL2);
+  S.mode='play';setInput(false);hideSheets();$('toasts').textContent='';$('hud').dataset.off='0';showScore();
+  if(G.knights)spawnKnight();
+}
+function showCard(n){
+  hideSheets();S.mode='title';$('hud').dataset.off='1';
+  $('cardeye').textContent='Level '+n+' of 4';$('cardst').innerHTML=POEM[n-1].join('<br>');
+  $('cardtip').textContent=LEVELS[n-1].tip;$('cardgoal').textContent=LEVELS[n-1].goal;
+  $('cardgo').textContent='Fly';$('cardgo').dataset.level=n;$('cardpoem').hidden=true;$('card').hidden=false;
+}
+function checkGoal(){
+  if(!G.level||S.mode!=='play')return;
+  let done=false;
+  if(G.level<3&&goal.on)done=Math.hypot(goal.x-S.x,goal.z-S.z)<36&&Math.abs(S.y-(goal.y+22))<55;
+  if(G.level===3)done=S.birds>=5&&S.eagles>=1;
+  if(G.level===4)done=S.soot>=3&&S.loot>=2;
+  if(!done)return;
+  Sound.chime();
+  const was=G.level;prog.level=Math.max(prog.level,was+1);save();
+  if(was<4){showCard(was+1);return;}
+  S.mode='finale';S.finT=4.5;$('hud').dataset.off='1';$('toasts').textContent='';setInput(false);
+}
+function showFinale(){
+  S.mode='title';G.level=0;Object.assign(G,{wind:true,birds:false,knights:false});
+  hideSheets();
+  $('cardeye').textContent='All four days flown';$('cardst').innerHTML=POEM[4].join('<br>');
+  $('cardtip').textContent='Free flight is yours. Choose what shares the sky with her, and chase a best score for each choice.';$('cardgoal').textContent='';
+  $('cardgo').textContent='Free flight';$('cardgo').dataset.level=0;$('cardpoem').hidden=false;$('card').hidden=false;refreshStart();
+}
+function refreshStart(){
+  const fin=prog.level>4;
+  $('go').textContent=fin?'Free flight':prog.level>1?'Level '+prog.level:'Fly';
+  $('opts').hidden=!fin;$('poembtn').hidden=!fin;
+  $('overbox').hidden=prog.level<=1&&!Object.keys(prog.best).length;$('confirm').hidden=true;$('over').hidden=false;
+  ['wind','birds','knights'].forEach(k=>{$('t-'+k).checked=prog.opts[k];});
+}
+function goHome(){
+  S.mode='title';setInput(false);G.level=0;Object.assign(G,{wind:true,birds:false,knights:false});DAY=180;S.t=28;S.y=Math.max(S.y,ground(S.x,S.z)+150);S.v=30;S.wounds=0;S.stam=1;S.tired=false;
+  clearWorld();refreshCells();$('toasts').textContent='';$('hud').dataset.off='1';hideSheets();$('start').hidden=false;refreshStart();
+}
+function startOver(){
+  prog={level:1,opts:{wind:true,birds:true,knights:true},best:{}};
+  try{localStorage.removeItem(SAVE);}catch(e){}
+  goHome();
+}
 function endDay(hurt){
   if(S.mode!=='play')return;
   S.mode='end';setInput(false);
-  $('hud').dataset.off='1';$('end').hidden=false;
+  $('hud').dataset.off='1';hideSheets();$('end').hidden=false;
   $('endh').textContent=hurt?'Enough for today':'Evening came';
+  const list=$('endlist');list.textContent='';
+  if(G.level){
+    $('endscore').textContent=goalText();$('endbest').textContent='';$('tally').textContent='Tomorrow she tries again, wounds healed.';
+    $('again').textContent='Try again';return;
+  }
+  $('again').textContent='New day';
   $('endscore').textContent=S.score+(S.score===1?' point':' points');
   $('endbest').textContent=S.beat?'New best!':'Best: '+best;
   const bits=[];
-  bits.push(S.soot===1?'1 knight sooted':S.soot+' knights sooted');
-  bits.push(S.birds===1?'1 bird':S.birds+' birds');
-  if(S.eagles)bits.push(S.eagles===1?'1 eagle':S.eagles+' eagles');
-  $('tally').textContent='Day '+S.day+': '+bits.join(', ')+'.';
-  const list=$('endlist');list.textContent='';
+  if(G.knights)bits.push(S.soot===1?'1 knight sooted':S.soot+' knights sooted');
+  if(G.birds){bits.push(S.birds===1?'1 bird':S.birds+' birds');if(S.eagles)bits.push(S.eagles===1?'1 eagle':S.eagles+' eagles');}
+  $('tally').textContent=bits.length?'Day '+S.day+': '+bits.join(', ')+'.':'Day '+S.day+'.';
   if(!S.hoard.length){const li=document.createElement('li');li.textContent='The hoard is empty. The air was lovely.';list.appendChild(li);}
   S.hoard.forEach(n=>{const li=document.createElement('li');li.textContent=n;list.appendChild(li);});
 }
 function newDay(){
-  S.day++;S.t=0;S.wounds=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.score=0;S.beat=false;S.startBest=best;S.hoard=[];showScore();S.y=Math.max(S.y,ground(S.x,S.z)+160);S.v=30;
-  S.mode='play';S.lastSeen=S.time;$('end').hidden=true;$('hud').dataset.off='0';
-  toast('Her wounds healed overnight.');
+  if(G.level){setupRun(G.level);return;}
+  const d=S.day+1;setupRun(0);S.day=d;toast('Her wounds healed overnight.');
 }
-function goHome(){
-  S.mode='title';setInput(false);S.day=1;S.t=28;S.score=0;S.beat=false;S.wounds=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.hoard=[];S.y=Math.max(S.y,ground(S.x,S.z)+150);S.v=30;
-  bolts.forEach(b=>scene.remove(b.m));bolts.length=0;
-  glints.forEach(g=>{scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();});glints.length=0;
-  $('toasts').textContent='';$('hud').dataset.off='1';$('end').hidden=true;$('start').hidden=false;showScore();
-}
-function startPlay(){
-  S.mode='play';S.t=0;S.lastSeen=S.time;S.startBest=best;showScore();$('start').hidden=true;$('hud').dataset.off='0';
-  S.y=Math.max(S.y,ground(S.x,S.z)+170);S.v=30;
-  spawnKnight();
+function goPlay(){
   Sound.init();wake();
-  setTimeout(()=>{if(S.mode==='play')toast('Let go: she flaps. Hold: she glides.');},900);
+  if(prog.level>4){S.day=1;setupRun(0);}else showCard(prog.level);
 }
 let lock=null;async function wake(){try{lock=await navigator.wakeLock.request('screen');}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.mode==='play')wake();});
 
 /* ---------- Flight ---------- */
 function flight(dt){
+  if(S.mode==='finale'){
+    S.finT-=dt;S.flapping=true;S.bank*=1-dt*3;S.pitch+=(.42-S.pitch)*Math.min(1,dt*2);S.v=30;
+    S.x-=Math.sin(S.yaw)*S.v*dt;S.z-=Math.cos(S.yaw)*S.v*dt;S.y+=dt*64;S.vy=64;
+    if(S.finT<=0)showFinale();
+    return;
+  }
   const auto=S.mode!=='play';
   const down=auto||input.down,dx=auto?.3:input.dx,dy=auto?0:input.dy;
   S.flapping=!down&&!S.tired&&S.stam>0;
   let tb=down?dx*1.0:0;
   if(S.wounds)tb+=S.side*S.wounds*.05;
   if(S.stormF>0)tb+=Math.sin(S.time*3.1)*.55*S.stormF;
-  let tp=down?(dy>0?dy*.3:dy*.68)-.045:(S.flapping?.24:-.045);
+  let tp=down?(dy>0?dy*.3:dy*.68)-.045:(S.flapping?lerp(.24,-.03,clamp((S.y-FLAP_CEIL)/40,0,1)):-.045);
   if(S.v<16)tp-=(16-S.v)*.06;
   S.bank+=(tb-S.bank)*Math.min(1,dt*4.2);
   S.pitch+=(tp-S.pitch)*Math.min(1,dt*3);
@@ -835,8 +1002,9 @@ function flight(dt){
   S.v=clamp(S.v+a*dt,10,78);
   S.yaw-=9.8*Math.tan(S.bank)/Math.max(S.v,16)*1.5*dt;
 
-  let air=thermal(S.x,S.y,S.z)+ridge(S.x,S.y,S.z);
+  let air=G.wind?thermal(S.x,S.y,S.z)+ridge(S.x,S.y,S.z):0;
   if(S.stormF>0)air-=9*S.stormF;
+  air+=6.5*S.stormEdge;
   if(S.y>CEILING)air*=clamp(1-(S.y-CEILING)/60,0,1);
   S.air=air;
   wind.a+=dt*.004;wind.x=Math.cos(wind.a)*wind.sp;wind.z=Math.sin(wind.a)*wind.sp;
@@ -917,26 +1085,41 @@ function clearSight(q){
   for(let t=.2;t<.9;t+=.2)if(H(lerp(cx,q.x,t),lerp(cz,q.z,t))>lerp(cy,qy,t))return false;
   return true;
 }
+function markTargets(){
+  const r={gold:false,always:false,list:[]};
+  if(G.level===1||G.level===2){r.gold=true;r.always=true;r.list.push({x:goal.x,y:goal.y+22,z:goal.z});return r;}
+  if(glints.length&&(G.level===0||G.level===4)&&!(G.level===4&&S.loot>=2)){r.gold=true;r.always=false;glints.forEach(g=>r.list.push(g));return r;}
+  if(G.level===3){
+    if(S.birds<5)flocks.forEach(F=>{if(!F.scared)r.list.push({x:F.x,y:F.y,z:F.z});});
+    if(S.eagles<1)eagles.forEach(e=>{if(e.alive)r.list.push({x:e.t.x,y:e.y,z:e.t.z});});
+  }else if(G.knights&&!(G.level===4&&S.soot>=3))knights.forEach(k=>{if(k.state!=='sooted')r.list.push({x:k.x,y:k.y+8,z:k.z});});
+  return r;
+}
+const inFront=q=>(q.x-S.x)*-Math.sin(cam.yaw)+(q.z-S.z)*-Math.cos(cam.yaw)>0;
 function updateMark(){
   const m=$('mark');
-  if(S.mode==='play')for(const q of knights){
-    if(q.state==='sooted'||Math.hypot(q.x-S.x,q.z-S.z)>460)continue;
-    markV.set(q.x,q.y+8,q.z).project(camera);
-    if((q.x-S.x)*-Math.sin(cam.yaw)+(q.z-S.z)*-Math.cos(cam.yaw)>0&&Math.abs(markV.x)<.92&&Math.abs(markV.y)<.92&&clearSight(q)){S.lastSeen=S.time;break;}
+  if(S.mode!=='play'){if(!m.hidden)m.hidden=true;return;}
+  const t=markTargets();let k=null,nd=1e9;
+  for(const q of t.list){
+    const d=Math.hypot(q.x-S.x,q.z-S.z);if(d<nd){nd=d;k=q;}
+    if(d>460)continue;
+    markV.set(q.x,q.y,q.z).project(camera);
+    if(inFront(q)&&Math.abs(markV.x)<.92&&Math.abs(markV.y)<.92&&clearSight(q))S.lastSeen=S.time;
   }
-  const k=S.nk;
-  if(S.mode!=='play'||!k||S.time-S.lastSeen<MARK_WAIT){if(!m.hidden)m.hidden=true;return;}
-  markV.set(k.x,k.y+8,k.z).project(camera);
-  const front=(k.x-S.x)*-Math.sin(cam.yaw)+(k.z-S.z)*-Math.cos(cam.yaw)>0;
+  if(!k||(!t.always&&S.time-S.lastSeen<MARK_WAIT)){if(!m.hidden)m.hidden=true;return;}
+  markV.set(k.x,k.y,k.z).project(camera);
+  const front=inFront(k);
   let x=markV.x,y=markV.y;if(!front){x=-x;y=-y;}
   if(front&&Math.abs(x)<.92&&Math.abs(y)<.92){if(!m.hidden)m.hidden=true;return;}
   const L=Math.max(Math.abs(x),Math.abs(y),.001);x/=L;y/=L;
   const w=innerWidth/2,h=innerHeight/2,px=w+x*(w-34),py=h-y*(h-34),rot=Math.atan2(-y,x)*180/PI;
   m.style.transform='translate('+px.toFixed(1)+'px,'+py.toFixed(1)+'px) rotate('+rot.toFixed(1)+'deg)';
+  m.dataset.gold=t.gold?'1':'0';
   if(m.hidden)m.hidden=false;
 }
 function updateHUD(){
   updateMark();
+  if(G.level)setText('goalhud',goalText());
   $('stambar').style.transform='scaleX('+clamp(S.stam,0,1).toFixed(3)+')';
   const tired=S.tired?'1':'0';if(hudLast.t!==tired){hudLast.t=tired;$('stambar').dataset.tired=tired;}
   setText('stamlab',S.tired?'Tired':S.flapping?'Flapping':'Gliding');
@@ -986,6 +1169,7 @@ const Sound=(function(){
     chime(){tone(880,.32,.11,'triangle');setTimeout(()=>tone(1320,.42,.1,'triangle'),95);},
     hit(){tone(150,.3,.3,'square',52);burst(.2,700,.35);},
     twang(){tone(760,.1,.05,'sawtooth',170);},
+    cry(){tone(1900,.42,.05,'triangle',1050);setTimeout(()=>tone(1700,.5,.04,'triangle',900),260);},
     fanfare(bold){
       if(!ctx||!on)return;
       const notes=bold?[[392,.11],[392,.11],[523,.13],[659,.38]]:[[659,.11],[523,.13],[392,.34]];
@@ -1025,7 +1209,16 @@ canvas.addEventListener('pointerup',onUp);
 canvas.addEventListener('pointercancel',onUp);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(!e.target.closest||!e.target.closest('.sheet'))e.preventDefault();},{passive:false});
-$('go').addEventListener('click',startPlay);
+$('go').addEventListener('click',goPlay);
+$('cardgo').addEventListener('click',e=>{Sound.init();wake();const n=+e.currentTarget.dataset.level;S.day=1;setupRun(n);});
+const openPoem=()=>{hideSheets();$('poem').hidden=false;};
+$('poembtn').addEventListener('click',openPoem);$('cardpoem').addEventListener('click',openPoem);
+$('poemback').addEventListener('click',goHome);
+$('over').addEventListener('click',()=>{$('over').hidden=true;$('confirm').hidden=false;});
+$('no').addEventListener('click',refreshStart);
+$('yes').addEventListener('click',startOver);
+['wind','birds','knights'].forEach(k=>$('t-'+k).addEventListener('change',e=>{prog.opts[k]=e.target.checked;save();}));
+$('poemtext').innerHTML=POEM.map(v=>'<p class="st">'+v.join('<br>')+'</p>').join('');
 $('again').addEventListener('click',newDay);
 $('home').addEventListener('click',goHome);
 $('home2').addEventListener('click',goHome);
@@ -1036,8 +1229,8 @@ addEventListener('resize',applySize);applySize();
 /* ---------- Loop ---------- */
 function step(dt){
   S.time+=dt;
-  if(S.mode==='play'){S.t+=dt;if(S.t>=DAY){S.t=DAY;endDay(false);}}
-  flight(dt);refreshCells();updateChunks(1);updateStorms(dt);updateFlocks(dt);updateEagles(dt);updateKnights(dt);
+  if(S.mode==='play'){S.t+=dt;checkGoal();if(S.mode==='play'&&S.t>=DAY){S.t=DAY;endDay(false);}}
+  flight(dt);refreshCells();updateChunks(1);updateStorms(dt);updateFlocks(dt);updateEagles(dt);updateKnights(dt);updateGoal();
   updateParts(dt);updateStreaks(dt);
 }
 let last=0;
@@ -1048,7 +1241,7 @@ function frame(now){
   renderer.setRenderTarget(rt);renderer.render(scene,camera);
   renderer.setRenderTarget(null);renderer.render(postScene,postCam);
 }
-S.y=ground(0,0)+200;cam.y=S.y+5;
+S.x=START.x;S.z=START.z;S.yaw=START.yaw;cam.yaw=S.yaw;S.y=ground(S.x,S.z)+150;cam.y=S.y+5;refreshStart();showScore();
 for(let i=0;i<4;i++)refreshCells();
 updateChunks(64);
 requestAnimationFrame(frame);
