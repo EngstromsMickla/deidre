@@ -37,8 +37,9 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 .hoard i{display:block;width:11px;height:11px;background:var(--gold);transform:rotate(45deg);outline:1px solid var(--ink)}
 .sunline{width:min(30vw,140px);height:1.5px;background:var(--ink);position:relative}
 #sundot{position:absolute;top:-4px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--gold);outline:1px solid var(--ink)}
-#snd{justify-self:end;pointer-events:auto;background:none;border:0;color:var(--ink);font:inherit;font-size:15px;padding:6px 0 6px 12px;text-shadow:inherit;cursor:pointer}
-#snd:focus-visible,.btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.tools{justify-self:end;display:grid;justify-items:end}
+#snd,#home{pointer-events:auto;background:none;border:0;color:var(--ink);font:inherit;font-size:15px;padding:6px 0 6px 12px;text-shadow:inherit;cursor:pointer}
+#snd:focus-visible,#home:focus-visible,.btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .bottom{display:grid;grid-template-columns:1fr minmax(0,240px) 1fr;align-items:end;gap:12px;font-variant-numeric:tabular-nums}
 .alt{font-size:15px;white-space:pre}
 .stam{display:grid;gap:4px;justify-items:center}
@@ -58,21 +59,23 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 #mark{position:fixed;left:0;top:0;width:0;height:0;margin:-9px 0 0 -7px;border-style:solid;border-width:9px 0 9px 20px;border-color:transparent transparent transparent var(--rubric);pointer-events:none;filter:drop-shadow(0 0 1.5px var(--ink))}
 #stick{position:fixed;width:112px;height:112px;margin:-56px 0 0 -56px;border:1.5px solid rgba(42,32,24,.5);border-radius:50%;pointer-events:none;opacity:0;transition:opacity .15s}
 #knob{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border-radius:50%;background:rgba(42,32,24,.3)}
-.sheet{position:fixed;inset:0;display:grid;align-content:end;justify-items:start;gap:14px;overflow-y:auto;touch-action:pan-y;
+.sheet{position:fixed;inset:0;display:grid;align-content:safe end;justify-items:start;gap:12px;overflow-y:auto;touch-action:pan-y;
   padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
   padding-left:max(30px,env(safe-area-inset-left,0px));padding-right:max(30px,env(safe-area-inset-right,0px));
   background:linear-gradient(to top,var(--paper) 0,var(--paper) 58%,rgba(236,223,196,0) 82%)}
 .sheet h1,.sheet h2{font-family:var(--display);font-weight:700;margin:0;line-height:.9;text-wrap:balance}
-.sheet h1{font-size:clamp(52px,15.5vw,110px);color:var(--ink)}
+.sheet h1{font-size:clamp(46px,13.5vw,104px);color:var(--ink)}
 .ini{color:var(--rubric)}
 .sheet h2{font-size:clamp(46px,13vw,76px)}
 .verse-line{font-style:italic;color:var(--sepia);margin:0;font-size:19px}
-.how{margin:0;padding:0;list-style:none;display:grid;gap:7px;max-width:34em;font-size:16px}
+.how{margin:0;padding:0;list-style:none;display:grid;gap:6px;max-width:34em;font-size:15.5px;line-height:1.28}
 .how li{display:grid;grid-template-columns:6.4em 1fr;gap:10px}
 .how b{color:var(--rubric);font-weight:700}
 .btn{font-family:var(--display);font-weight:700;font-size:32px;line-height:1;background:var(--rubric);color:var(--paper);border:0;border-radius:2px;padding:12px 34px 14px;cursor:pointer;touch-action:manipulation}
 .list{margin:0;padding:0;list-style:none;display:grid;gap:3px;max-height:34vh;overflow-y:auto;max-width:34em}
 .tally{margin:0;max-width:34em}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.btn.quiet{background:none;color:var(--rubric);box-shadow:inset 0 0 0 2px var(--rubric)}
 .endscore{margin:0;font-weight:700;font-size:22px;color:var(--rubric);display:flex;flex-wrap:wrap;gap:4px 14px}
 @media (prefers-reduced-motion:reduce){.toast{animation-duration:3.4s}}
 </style>
@@ -88,7 +91,7 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
   <div class="top">
     <div class="scorebox"><div class="hoard" aria-label="Score"><i></i><span id="hoardn">0</span></div><div class="best" id="best">Best 0</div></div>
     <div class="sunline" aria-label="Time of day"><div id="sundot"></div></div>
-    <button id="snd" type="button">Sound on</button>
+    <div class="tools"><button id="snd" type="button">Sound on</button><button id="home" type="button">Home</button></div>
   </div>
   <div id="toasts" aria-live="polite"></div>
   <div class="bottom">
@@ -104,9 +107,10 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
   <ul class="how">
     <li><b>Let go</b><span>She flaps, climbs and flies straight. It tires her.</span></li>
     <li><b>Hold</b><span>She glides quietly. Drag sideways to turn, towards you to lift her nose, away to dive.</span></li>
-    <li><b>Blue strokes</b><span>The air is rising there. Circle in them and she rests as she climbs.</span></li>
-    <li><b>Knights</b><span>Red pennants on the ground. If you see none for a while, a red arrow points the way. Get close and she sneezes. Pick up what glints.</span></li>
-    <li><b>Score</b><span>Bird 2, sooted knight 10, treasure 20, eagle 50. Nothing is ever deducted: fail and she simply flies worse.</span></li>
+    <li><b>Blue strokes</b><span>Rising air. Circle in it and she rests as she climbs.</span></li>
+    <li><b>Sounds</b><span>Beeps mean rising air: faster beeps, stronger lift. The wind rises and falls with her speed.</span></li>
+    <li><b>Knights</b><span>Red pennants. A trumpet sounds when they spot her; a red arrow helps if you see none. Get close and she sneezes. Pick up what glints.</span></li>
+    <li><b>Score</b><span>Bird 2, knight 10, treasure 20, eagle 50. Nothing is deducted: fail and she flies worse.</span></li>
   </ul>
   <button class="btn" id="go" type="button">Fly</button>
 </section>
@@ -117,7 +121,7 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
   <p class="endscore"><span id="endscore">0 points</span> <span id="endbest"></span></p>
   <p class="tally" id="tally"></p>
   <ul class="list" id="endlist"></ul>
-  <button class="btn" id="again" type="button">New day</button>
+  <div class="row"><button class="btn" id="again" type="button">New day</button><button class="btn quiet" id="home2" type="button">Home</button></div>
 </section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -177,7 +181,7 @@ vec3 col=uTint*vC*mix(uShade,1.,smoothstep(.12,.6,l))*uDay;
 float c1=dot(vP,vec3(.46,.86,.22))*uScale,c2=dot(vP,vec3(-.62,.3,.72))*uScale,far=smoothstep(150.,330.,vD);
 col*=mix(1.,.64,t);
 float w1=min(t*.5,.3),h=mix(ln(c1/8.,w1),ln(c1/32.,w1*.32),far)*smoothstep(.02,.1,w1);
-float w2=min(max(t-.5,0.)*.9,.26)*(1.-uLow);
+float w2=min(max(t-.74,0.)*.9,.2)*(1.-uLow);
 float nr=1.-smoothstep(45.,105.,vD);h=mix(h,ln(c1/2.6,w1*.8)*smoothstep(.02,.1,w1),nr);
 h=max(h,ln(c2/8.,w2)*(1.-far)*(1.-nr)*smoothstep(.01,.08,w2));
 col=mix(col,uInk*uDay,h*mix(.8,.56,far));
@@ -221,7 +225,7 @@ function mixKey(t,k,out){
 }
 function updateSky(){
   const t=S.t/DAY,st=S.stormF,a=lerp(-.1,PI+.1,t);
-  sunDir.set(Math.cos(a),Math.max(Math.sin(a)*.8,0)+.14,.35).normalize();
+  sunDir.set(Math.cos(a),Math.max(Math.sin(a)*.8,0)+.3,.35).normalize();
   skyU.sunD.value.copy(sunDir);
   camera.updateMatrixWorld();
   U.uSunV.value.copy(sunDir).transformDirection(camera.matrixWorldInverse);
@@ -667,7 +671,7 @@ function updateKnights(dt){
     const k=knights[i];k.t+=dt;
     const dx=S.x-k.x,dz=S.z-k.z,d=Math.hypot(dx,S.y-k.y,dz),hd=Math.hypot(dx,dz);
     let sp=3;
-    if(k.state==='idle'&&d<170&&S.mode==='play'){k.state=k.bold?'aim':'flee';S.seen=S.seen+1;}
+    if(k.state==='idle'&&d<170&&S.mode==='play'){k.state=k.bold?'aim':'flee';S.seen=S.seen+1;if(S.time-(S.lastHorn||-99)>6){S.lastHorn=S.time;Sound.fanfare(k.bold);}}
     if(k.state==='idle'){k.dir+=Math.sin(k.t*.3+i)*dt*.3;}
     if(k.state==='flee'||k.state==='sooted'){sp=k.state==='sooted'?17:15;k.dir=lerpAng(k.dir,Math.atan2(dx,dz),dt*2.2);}
     if(k.state==='aim'){sp=0;k.dir=lerpAng(k.dir,Math.atan2(-dx,-dz),dt*3);
@@ -795,6 +799,12 @@ function newDay(){
   S.day++;S.t=0;S.wounds=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.score=0;S.beat=false;S.startBest=best;S.hoard=[];showScore();S.y=Math.max(S.y,ground(S.x,S.z)+160);S.v=30;
   S.mode='play';S.lastSeen=S.time;$('end').hidden=true;$('hud').dataset.off='0';
   toast('Her wounds healed overnight.');
+}
+function goHome(){
+  S.mode='title';setInput(false);S.day=1;S.t=28;S.score=0;S.beat=false;S.wounds=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.hoard=[];S.y=Math.max(S.y,ground(S.x,S.z)+150);S.v=30;
+  bolts.forEach(b=>scene.remove(b.m));bolts.length=0;
+  glints.forEach(g=>{scene.remove(g.m);scene.remove(g.beam);g.beam.material.dispose();});glints.length=0;
+  $('toasts').textContent='';$('hud').dataset.off='1';$('end').hidden=true;$('start').hidden=false;showScore();
 }
 function startPlay(){
   S.mode='play';S.t=0;S.lastSeen=S.time;S.startBest=best;showScore();$('start').hidden=true;$('hud').dataset.off='0';
@@ -967,7 +977,7 @@ const Sound=(function(){
       windG.gain.setTargetAtTime(q*(.05+clamp((v-20)/55,0,1)*.32+storm*.2),ctx.currentTime,.2);
       windF.frequency.setTargetAtTime(240+v*16,ctx.currentTime,.2);
       varioT-=dt;
-      if(S.mode==='play'&&S.air>1.3&&varioT<=0){const w=clamp(S.air,1,10);varioT=lerp(.46,.17,w/10);tone(430+w*62,.09,.075);}
+      if(S.mode==='play'&&S.air>1.3&&varioT<=0){const w=clamp(S.air,1,10);varioT=lerp(.46,.17,w/10);tone(430+w*62,.09,.075);if(on&&!S.beepHint){S.beepHint=true;toast('Beeps mean rising air. Faster beeps, stronger lift.');}}
     },
     flap(){burst(.17,520,.3,'lowpass',130);},
     inhale(){tone(320,.4,.09,'triangle',760);},
@@ -976,6 +986,18 @@ const Sound=(function(){
     chime(){tone(880,.32,.11,'triangle');setTimeout(()=>tone(1320,.42,.1,'triangle'),95);},
     hit(){tone(150,.3,.3,'square',52);burst(.2,700,.35);},
     twang(){tone(760,.1,.05,'sawtooth',170);},
+    fanfare(bold){
+      if(!ctx||!on)return;
+      const notes=bold?[[392,.11],[392,.11],[523,.13],[659,.38]]:[[659,.11],[523,.13],[392,.34]];
+      let at=ctx.currentTime+.02;
+      notes.forEach(([f0,d])=>{
+        const out=ctx.createGain(),lp=ctx.createBiquadFilter();lp.type='lowpass';lp.Q.value=1.2;
+        lp.frequency.setValueAtTime(700,at);lp.frequency.linearRampToValueAtTime(2800,at+.05);lp.frequency.linearRampToValueAtTime(1500,at+d);
+        out.gain.setValueAtTime(0,at);out.gain.linearRampToValueAtTime(.14,at+.025);out.gain.setValueAtTime(.12,at+d-.03);out.gain.linearRampToValueAtTime(0,at+d);
+        [1,1.004].forEach(m=>{const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=f0*m;o.connect(lp);o.start(at);o.stop(at+d+.01);});
+        lp.connect(out);out.connect(master);at+=d+.025;
+      });
+    },
     thunder(a){burst(1.5,170,.55*a,'lowpass',55);},
     toggle(){on=!on;return on;}
   };
@@ -1005,6 +1027,8 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>{if(!e.target.closest||!e.target.closest('.sheet'))e.preventDefault();},{passive:false});
 $('go').addEventListener('click',startPlay);
 $('again').addEventListener('click',newDay);
+$('home').addEventListener('click',goHome);
+$('home2').addEventListener('click',goHome);
 $('snd').addEventListener('click',()=>{Sound.init();$('snd').textContent=Sound.toggle()?'Sound on':'Sound off';});
 
 addEventListener('resize',applySize);applySize();
