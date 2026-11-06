@@ -830,7 +830,7 @@ const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam
   hoard:[],soot:0,birds:0,eagles:0,sneezeCd:0,sneezeW:0,sneezeK:null,sneezeAnim:0,lastSeen:0,flapping:false,flapPh:0,flap:0,air:0,stormF:0,lightning:0,near:null,seen:0,scrape:0,hinted:false};
 const input={down:false,dx:0,dy:0,x0:0,y0:0,id:null};
 const maxStam=()=>1-.2*S.wounds;
-const PTS={bird:2,soot:10,loot:20,eagle:50},SAVE='deidre-flight-2';
+const PTS={bird:2,soot:10,loot:20,eagle:20},SAVE='deidre-flight-2';
 const pts=n=>G.level?'':' +'+n;
 let prog={level:1,opts:{wind:true,birds:true,knights:true},best:{}};
 try{const q=JSON.parse(localStorage.getItem(SAVE));if(q&&q.level)prog=Object.assign(prog,q);}catch(e){}
