@@ -50,6 +50,7 @@ canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-ac
 #pips{justify-self:end;display:flex;gap:5px}
 #pips b{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);display:block;background:var(--paper)}
 #pips b.on{background:var(--rubric)}
+#pips b.half{background:linear-gradient(90deg,var(--rubric) 50%,var(--paper) 50%)}
 #toasts{align-self:start;justify-self:center;display:grid;gap:2px;justify-items:center;margin-top:9vh;text-align:center}
 .toast{animation:fadeout 2.8s forwards;font-size:19px;font-weight:500;max-width:88vw}
 .toast.big{font-family:var(--display);font-size:72px;font-weight:700;color:var(--rubric);line-height:1;animation-duration:1.5s}
@@ -830,7 +831,7 @@ function updateGoal(){
 const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam:1,tired:false,wounds:0,side:1,inv:0,day:1,t:28,time:0,score:0,beat:false,startBest:0,loot:0,gi:0,sleepT:0,sleepPose:0,landed:false,landT:0,snored:false,stormEdge:0,finT:0,lastCry:-99,
   hoard:[],soot:0,birds:0,eagles:0,sneezeCd:0,sneezeW:0,sneezeK:null,sneezeAnim:0,lastSeen:0,flapping:false,flapPh:0,flap:0,air:0,stormF:0,lightning:0,near:null,seen:0,scrape:0,hinted:false};
 const input={down:false,dx:0,dy:0,x0:0,y0:0,id:null};
-const maxStam=()=>1-.2*S.wounds;
+const maxStam=()=>1-.12*S.wounds;
 const PTS={bird:2,soot:10,loot:20,eagle:20},SAVE='deidre-flight-2';
 const pts=n=>G.level?'':' +'+n;
 let prog={level:1,opts:{wind:true,birds:true,knights:true},best:{}};
@@ -863,7 +864,7 @@ const SPLASH=['Splash. Dragons are not ducks.','Wet dragon. Very undignified.','
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function wound(msg,kind){
   if(S.inv>0||S.mode!=='play')return;
-  S.inv=3;S.wounds++;S.side=Math.random()<.5?-1:1;S.shake=1;S.stam=Math.min(S.stam,maxStam());
+  S.inv=3;S.wounds+=kind?.5:1;S.side=Math.random()<.5?-1:1;S.shake=1;S.stam=Math.min(S.stam,maxStam());
   toast(msg);
   if(kind){
     if(kind==='splash')Sound.splash();else Sound.bump();
@@ -1028,7 +1029,7 @@ function flight(dt){
   const down=auto||input.down,dx=auto?.3:input.dx,dy=auto?0:input.dy;
   S.flapping=!down&&!S.tired&&S.stam>0;
   let tb=down?dx*1.0:0;
-  if(S.wounds)tb+=S.side*S.wounds*.05;
+  if(S.wounds)tb+=S.side*S.wounds*.035;
   if(S.stormF>0)tb+=Math.sin(S.time*3.1)*.55*S.stormF;
   let tp=down?(dy>0?dy*.3:dy*.68)-.032:(S.flapping?lerp(.27,-.03,clamp((S.y-FLAP_CEIL)/40,0,1)):-.032);
   if(S.v<16)tp-=(16-S.v)*.06;
@@ -1037,7 +1038,7 @@ function flight(dt){
   const n=1/Math.max(Math.cos(S.bank),.3);
   let a=-9.8*Math.sin(S.pitch)-.00044*S.v*S.v-.34*(n*n-1);
   if(S.v>42)a-=.00002*S.v*S.v*S.v;
-  if(S.flapping)a+=3.9*(1-.15*S.wounds);
+  if(S.flapping)a+=3.9*(1-.09*S.wounds);
   S.v=clamp(S.v+a*dt,10,78);
   S.yaw-=9.8*Math.tan(S.bank)/Math.max(S.v,16)*1.5*dt;
 
@@ -1050,7 +1051,7 @@ function flight(dt){
   wind.a+=dt*.004;wind.x=Math.cos(wind.a)*wind.sp;wind.z=Math.sin(wind.a)*wind.sp;
   const cp=Math.cos(S.pitch);
   S.vx=-Math.sin(S.yaw)*S.v*cp+wind.x*.3;S.vz=-Math.cos(S.yaw)*S.v*cp+wind.z*.3;
-  S.vy=S.v*Math.sin(S.pitch)+air-S.wounds*.35-(S.y>CEILING+50&&!auto?(S.y-CEILING-50)*.3:0);
+  S.vy=S.v*Math.sin(S.pitch)+air-S.wounds*.2-(S.y>CEILING+50&&!auto?(S.y-CEILING-50)*.3:0);
   const before=S.y-ground(S.x,S.z);
   S.x+=S.vx*dt;S.y+=S.vy*dt;S.z+=S.vz*dt;
 
@@ -1087,7 +1088,7 @@ function animate(dt){
   const sweep=clamp((S.v-38)/26,0,1)+clamp(-S.pitch-.2,0,.6);
   [[D.L,-1],[D.R,1]].forEach(([w,s])=>{
     const bankIn=(s>0?1:-1)*S.bank*.14;
-    const droop=(s===S.side?S.wounds*.07:0);
+    const droop=(s===S.side?S.wounds*.06:0);
     w.shoulder.rotation.z=s*(lerp(.12+bankIn,.18+.72*sn,S.flap)-droop);
     w.elbow.rotation.z=s*lerp(-.06+Math.sin(S.time*1.5+s)*.03,-.12+.62*sn2,S.flap);
     w.shoulder.rotation.y=-s*.9*clamp(sweep,0,1);
@@ -1184,7 +1185,7 @@ function updateHUD(){
   $('sundot').style.left=(clamp(S.t/DAY,0,1)*100).toFixed(1)+'%';
   const h=Math.round(S.y-ground(S.x,S.z)),vs=S.vy;
   setText('alt',h+' m  '+(vs>0?'+':'')+vs.toFixed(1));
-  const pips=$('pips').children;for(let i=0;i<3;i++){const on=i<S.wounds;if(pips[i].classList.contains('on')!==on)pips[i].classList.toggle('on',on);}
+  const pips=$('pips').children;for(let i=0;i<3;i++){const on=i+1<=S.wounds,half=!on&&i<S.wounds;if(pips[i].classList.contains('on')!==on)pips[i].classList.toggle('on',on);if(pips[i].classList.contains('half')!==half)pips[i].classList.toggle('half',half);}
 }
 
 /* ---------- Sound ---------- */
