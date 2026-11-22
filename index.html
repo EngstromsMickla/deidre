@@ -456,7 +456,7 @@ const box=(w,h,d,x,y,z,c,rx)=>({g:BOX,m:M(x,y,z,rx||0,0,0,w,h,d),c});
 const vcMat=inkMat({vc:true,hatch:0,shade:.9,side:T.DoubleSide});
 
 /* ---------- Deidre ---------- */
-const D={root:new T.Group()};
+const D={root:new T.Group(),eyes:[],lids:[]};
 (function buildDeidre(){
   const EMBER=0xdc6228,BELLY=0xf3dfae,MEMB=0xeea457,BONE=0x8e3d1f;
   const flat=c=>inkMat({tint:c,local:true,shade:.76,hatch:0,side:T.DoubleSide});
@@ -474,6 +474,7 @@ const D={root:new T.Group()};
   [-1,1].forEach(s=>{
     const w=new T.Mesh(ICO,mWhite);w.scale.setScalar(.27);w.position.set(s*.43,.2,-.42);head.add(w);
     const p=new T.Mesh(ICO,mDark);p.scale.setScalar(.15);p.position.set(s*.5,.22,-.58);head.add(p);
+    const lid=new T.Mesh(ICO,mE);lid.scale.set(.29,.05,.29);lid.position.set(s*.45,.2,-.45);lid.visible=false;head.add(lid);D.eyes.push(w,p);D.lids.push(lid);
     const h=new T.Mesh(new T.ConeGeometry(.13,.62,5),mB);h.position.set(s*.32,.68,.3);h.rotation.set(-.7,0,-s*.2);head.add(h);
   });
   D.tail=[];let par=body;const lens=[.9,.85,.8,.72,.65,.6];
@@ -826,7 +827,7 @@ function updateGoal(){
 }
 
 /* ---------- Game state ---------- */
-const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam:1,tired:false,wounds:0,side:1,inv:0,day:1,t:28,time:0,score:0,beat:false,startBest:0,loot:0,gi:0,stormEdge:0,finT:0,lastCry:-99,
+const S={mode:'title',x:0,y:0,z:0,yaw:.6,pitch:0,bank:0,v:30,vx:0,vy:0,vz:0,stam:1,tired:false,wounds:0,side:1,inv:0,day:1,t:28,time:0,score:0,beat:false,startBest:0,loot:0,gi:0,sleepT:0,sleepPose:0,landed:false,landT:0,snored:false,stormEdge:0,finT:0,lastCry:-99,
   hoard:[],soot:0,birds:0,eagles:0,sneezeCd:0,sneezeW:0,sneezeK:null,sneezeAnim:0,lastSeen:0,flapping:false,flapPh:0,flap:0,air:0,stormF:0,lightning:0,near:null,seen:0,scrape:0,hinted:false};
 const input={down:false,dx:0,dy:0,x0:0,y0:0,id:null};
 const maxStam=()=>1-.2*S.wounds;
@@ -857,14 +858,24 @@ function toast(txt,cls){
   const box=$('toasts');box.appendChild(el);while(box.children.length>3)box.removeChild(box.firstChild);
   el.addEventListener('animationend',()=>el.remove());
 }
-function wound(msg){
+const BUMPS=['Bonk. She is fine, just embarrassed.','Scraped her knees. Dragons do that.','A pebble in her claw. Ouch-ish.','She will say she meant to do that.','Thud. Nobody saw. Probably.','Grass up her nostrils. Undignified.'];
+const SPLASH=['Splash. Dragons are not ducks.','Wet dragon. Very undignified.','Plop. A fish looked offended.'];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function wound(msg,kind){
   if(S.inv>0||S.mode!=='play')return;
   S.inv=3;S.wounds++;S.side=Math.random()<.5?-1:1;S.shake=1;S.stam=Math.min(S.stam,maxStam());
-  toast(msg);Sound.hit();
-  $('flash').style.transition='none';$('flash').style.opacity=.75;
-  requestAnimationFrame(()=>{$('flash').style.transition='opacity .9s';$('flash').style.opacity=0;});
-  for(let i=0;i<14;i++)spark(S.x,S.y,S.z,S.vx*.7+rnd(-9,9),S.vy*.7+rnd(-9,9),S.vz*.7+rnd(-9,9),rnd(.5,1.1),.34,0xf0a24a,6);
-  if(S.wounds>=3)setTimeout(()=>endDay(true),900);
+  toast(msg);
+  if(kind){
+    if(kind==='splash')Sound.splash();else Sound.bump();
+    S.shake=.5;
+    for(let i=0;i<16;i++)spark(S.x,S.y-1.5,S.z,rnd(-7,7),rnd(3,10),rnd(-7,7),rnd(.6,1.2),rnd(.4,.9),kind==='splash'?0xdcecf2:0xb9a884,8);
+  }else{
+    Sound.hit();
+    $('flash').style.transition='none';$('flash').style.opacity=.75;
+    requestAnimationFrame(()=>{$('flash').style.transition='opacity .9s';$('flash').style.opacity=0;});
+    for(let i=0;i<14;i++)spark(S.x,S.y,S.z,S.vx*.7+rnd(-9,9),S.vy*.7+rnd(-9,9),S.vz*.7+rnd(-9,9),rnd(.5,1.1),.34,0xf0a24a,6);
+  }
+  if(S.wounds>=3)setTimeout(startSleep,kind?500:900);
 }
 const POEM=[
  ['A tiny serpent, born to fly','May dread the sky turned grey','But trust her urge, there is no why','This glorious first day'],
@@ -904,7 +915,7 @@ function setupRun(lv){
   else{Object.assign(G,prog.opts);DAY=180;}
   clearWorld();
   S.x=START.x;S.z=START.z;S.yaw=START.yaw;S.y=Math.min(190,ground(S.x,S.z)+120);S.pitch=0;S.bank=0;S.v=30;
-  S.t=0;S.wounds=0;S.inv=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.loot=0;S.score=0;S.beat=false;S.hoard=[];S.lastSeen=S.time;S.stormF=0;S.stormEdge=0;
+  S.sleepPose=0;S.landed=false;S.snored=false;S.t=0;S.wounds=0;S.inv=0;S.stam=1;S.tired=false;S.soot=0;S.birds=0;S.eagles=0;S.loot=0;S.score=0;S.beat=false;S.hoard=[];S.lastSeen=S.time;S.stormF=0;S.stormEdge=0;
   best=lv?0:(prog.best[comboKey()]||0);S.startBest=best;
   cam.yaw=S.yaw;cam.y=S.y+5;
   refreshCells();updateChunks(64);
@@ -946,7 +957,7 @@ function refreshStart(){
   ['wind','birds','knights'].forEach(k=>{$('t-'+k).checked=prog.opts[k];});
 }
 function goHome(){
-  S.mode='title';setInput(false);G.level=0;Object.assign(G,{wind:true,birds:false,knights:false});DAY=180;S.t=28;S.y=Math.max(S.y,ground(S.x,S.z)+150);S.v=30;S.wounds=0;S.stam=1;S.tired=false;
+  S.sleepPose=0;S.mode='title';setInput(false);G.level=0;Object.assign(G,{wind:true,birds:false,knights:false});DAY=180;S.t=28;S.y=Math.max(S.y,ground(S.x,S.z)+150);S.v=30;S.wounds=0;S.stam=1;S.tired=false;
   clearWorld();refreshCells();$('toasts').textContent='';$('hud').dataset.off='1';hideSheets();$('start').hidden=false;refreshStart();
 }
 function startOver(){
@@ -954,8 +965,13 @@ function startOver(){
   try{localStorage.removeItem(SAVE);}catch(e){}
   goHome();
 }
-function endDay(hurt){
+function startSleep(){
   if(S.mode!=='play')return;
+  S.mode='sleep';S.sleepT=0;S.landed=false;S.sleepPose=0;setInput(false);
+  Sound.groan();toast('She has had quite enough for one day.');
+}
+function endDay(hurt){
+  if(S.mode!=='play'&&S.mode!=='sleep')return;
   S.mode='end';setInput(false);
   $('hud').dataset.off='1';hideSheets();$('end').hidden=false;
   $('endh').textContent=hurt?'Enough for today':'Evening came';
@@ -987,6 +1003,21 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- Flight ---------- */
 function flight(dt){
+  if(S.mode==='sleep'){
+    S.sleepT+=dt;S.flapping=false;S.bank*=1-dt*3;
+    const g=ground(S.x,S.z);
+    if(!S.landed){
+      S.pitch+=(-.22-S.pitch)*Math.min(1,dt*2);S.v=Math.max(16,S.v-dt*8);
+      S.x-=Math.sin(S.yaw)*S.v*dt;S.z-=Math.cos(S.yaw)*S.v*dt;S.vy=-Math.max(14,(S.y-g)*.5);S.y+=S.vy*dt;
+      if(S.y-g<2||S.sleepT>14){S.landed=true;S.landT=S.sleepT;Sound.bump(true);for(let i=0;i<20;i++)spark(S.x,g+.5,S.z,rnd(-8,8),rnd(2,6),rnd(-8,8),rnd(.7,1.3),rnd(.5,1),0xb9a884,6);}
+    }else{
+      S.v=0;S.vy=0;S.pitch*=1-dt*4;S.y+=(g+1.1-S.y)*Math.min(1,dt*6);
+      S.sleepPose=Math.min(1,S.sleepPose+dt*.8);
+      if(S.sleepT-S.landT>1.6&&!S.snored){S.snored=true;Sound.snore();}
+      if(S.sleepT-S.landT>4.2){S.snored=false;endDay(true);}
+    }
+    return;
+  }
   if(S.mode==='finale'){
     S.finT-=dt;S.flapping=true;S.bank*=1-dt*3;S.pitch+=(.42-S.pitch)*Math.min(1,dt*2);S.v=30;
     S.x-=Math.sin(S.yaw)*S.v*dt;S.z-=Math.cos(S.yaw)*S.v*dt;S.y+=dt*64;S.vy=64;
@@ -999,14 +1030,14 @@ function flight(dt){
   let tb=down?dx*1.0:0;
   if(S.wounds)tb+=S.side*S.wounds*.05;
   if(S.stormF>0)tb+=Math.sin(S.time*3.1)*.55*S.stormF;
-  let tp=down?(dy>0?dy*.3:dy*.68)-.045:(S.flapping?lerp(.24,-.03,clamp((S.y-FLAP_CEIL)/40,0,1)):-.045);
+  let tp=down?(dy>0?dy*.3:dy*.68)-.032:(S.flapping?lerp(.27,-.03,clamp((S.y-FLAP_CEIL)/40,0,1)):-.032);
   if(S.v<16)tp-=(16-S.v)*.06;
   S.bank+=(tb-S.bank)*Math.min(1,dt*4.2);
   S.pitch+=(tp-S.pitch)*Math.min(1,dt*3);
   const n=1/Math.max(Math.cos(S.bank),.3);
-  let a=-9.8*Math.sin(S.pitch)-.0005*S.v*S.v-.4*(n*n-1);
+  let a=-9.8*Math.sin(S.pitch)-.00044*S.v*S.v-.34*(n*n-1);
   if(S.v>42)a-=.00002*S.v*S.v*S.v;
-  if(S.flapping)a+=3.3*(1-.18*S.wounds);
+  if(S.flapping)a+=3.9*(1-.15*S.wounds);
   S.v=clamp(S.v+a*dt,10,78);
   S.yaw-=9.8*Math.tan(S.bank)/Math.max(S.v,16)*1.5*dt;
 
@@ -1034,8 +1065,11 @@ function flight(dt){
     const closing=(before-agl)/Math.max(dt,.001);
     S.y=g+2.4;
     S.scrape-=dt;
-    if(closing>26&&S.inv<=0){wound('The ground was closer than it looked.');S.v*=.6;}
-    else if(S.scrape<=0&&!auto){S.scrape=4;toast('Oops.');}
+    if(!auto&&S.inv<=0){
+      const wet=g<=WATER+.1;
+      wound(wet?pick(SPLASH):pick(BUMPS),wet?'splash':'bump');
+      S.v*=closing>26?.6:.85;S.y+=1.2;
+    }
     S.pitch=Math.max(S.pitch,.32);S.v=Math.max(S.v*(1-dt*.9),18);
     if(Math.random()<dt*24)spark(S.x,g+.6,S.z,rnd(-5,5),rnd(2,7),rnd(-5,5),.6,1,g<=WATER+.1?0xdcecf2:0xb9a884,3);
   }
@@ -1068,6 +1102,21 @@ function animate(dt){
   D.neck.rotation.x=lx*.45-windup*.5+S.sneezeAnim*.75;D.head.rotation.x=lx*.4-windup*.4+S.sneezeAnim*.5;
   D.tail.forEach((g,i)=>{g.rotation.y=Math.sin(S.time*2.1-i*.7)*.09+S.bank*.16;g.rotation.x=.04+Math.sin(S.time*1.6-i*.6)*.035-S.pitch*.1;});
 
+  const P=S.mode==='sleep'||(S.mode==='end'&&S.sleepPose>0)?S.sleepPose:0;
+  if(P>0){
+    const e=sm(P);
+    r.rotation.set(S.pitch*(1-e),S.yaw,-S.bank*(1-e));
+    [[D.L,-1],[D.R,1]].forEach(([w,s])=>{
+      w.shoulder.rotation.z=lerp(w.shoulder.rotation.z,-s*.95,e);w.elbow.rotation.z=lerp(w.elbow.rotation.z,s*.9,e);
+      w.shoulder.rotation.y=lerp(w.shoulder.rotation.y,-s*1.15,e);w.elbow.rotation.y=lerp(w.elbow.rotation.y,-s*.4,e);
+    });
+    D.neck.rotation.y=lerp(D.neck.rotation.y,2.25,e);D.neck.rotation.x=lerp(D.neck.rotation.x,1.0,e);
+    D.head.rotation.y=lerp(D.head.rotation.y,1.2,e);D.head.rotation.x=lerp(D.head.rotation.x,1.0,e);
+    D.R.shoulder.rotation.z=lerp(D.R.shoulder.rotation.z,.35,e);D.R.shoulder.rotation.y=lerp(D.R.shoulder.rotation.y,-1.5,e);D.R.elbow.rotation.z=lerp(D.R.elbow.rotation.z,-.5,e);
+    D.tail.forEach(t=>{t.rotation.y=lerp(t.rotation.y,-.42,e);t.rotation.x=lerp(t.rotation.x,0,e);});
+    D.body.position.y=0;D.body.scale.y=1+.035*e*Math.sin(S.time*1.6);
+  }else D.body.scale.y=1;
+  const shut=P>.55;D.eyes.forEach(m=>{m.visible=!shut;});D.lids.forEach(m=>{m.visible=shut;});
   const g=ground(S.x,S.z),agl=S.y-g;
   blobShadow.visible=agl<95;blobShadow.position.set(S.x,g+1.4,S.z);blobShadow.material.opacity=.34*(1-agl/95);
 
@@ -1131,7 +1180,7 @@ function updateHUD(){
   if(G.level)setText('goalhud',goalText());
   $('stambar').style.transform='scaleX('+clamp(S.stam,0,1).toFixed(3)+')';
   const tired=S.tired?'1':'0';if(hudLast.t!==tired){hudLast.t=tired;$('stambar').dataset.tired=tired;}
-  setText('stamlab',S.tired?'Tired':S.flapping?'Flapping':'Gliding');
+  setText('stamlab',S.mode==='sleep'?'Asleep':S.tired?'Tired':S.flapping?'Flapping':'Gliding');
   $('sundot').style.left=(clamp(S.t/DAY,0,1)*100).toFixed(1)+'%';
   const h=Math.round(S.y-ground(S.x,S.z)),vs=S.vy;
   setText('alt',h+' m  '+(vs>0?'+':'')+vs.toFixed(1));
@@ -1177,6 +1226,26 @@ const Sound=(function(){
     gulp(){tone(180,.13,.2,'sine',420);},
     chime(){tone(880,.32,.11,'triangle');setTimeout(()=>tone(1320,.42,.1,'triangle'),95);},
     hit(){tone(150,.3,.3,'square',52);burst(.2,700,.35);},
+    bump(soft){
+      if(!ctx||!on)return;
+      const k=soft?2:Math.floor(Math.random()*4);
+      if(k===0){[0,.17].forEach(d=>setTimeout(()=>burst(.22,2600,.32,'bandpass',900),d*1000));}
+      else if(k===1){tone(520,.5,.2,'sine',120);setTimeout(()=>tone(300,.32,.12,'sine',110),180);}
+      else if(k===2){tone(900,.06,.22,'square',650);tone(170,.18,.3,'sine',80);}
+      else{tone(1250,.12,.12,'triangle',1950);setTimeout(()=>tone(1900,.14,.1,'triangle',1100),110);}
+    },
+    splash(){burst(.55,1700,.42,'bandpass',380);setTimeout(()=>tone(700,.12,.08,'sine',1300),60);},
+    groan(){
+      if(!ctx||!on)return;
+      const t=ctx.currentTime,lp=ctx.createBiquadFilter(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+      lp.type='lowpass';lp.frequency.setValueAtTime(900,t);lp.frequency.linearRampToValueAtTime(320,t+1.9);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.2,t+.25);g.gain.linearRampToValueAtTime(.16,t+1.4);g.gain.linearRampToValueAtTime(0,t+2);
+      lfo.frequency.value=7;lg.gain.value=4;lfo.connect(lg);
+      [1,1.51].forEach(m=>{const o=ctx.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(118*m,t);o.frequency.exponentialRampToValueAtTime(52*m,t+1.9);lg.connect(o.frequency);o.connect(lp);o.start(t);o.stop(t+2.05);});
+      lfo.start(t);lfo.stop(t+2.05);lp.connect(g);g.connect(master);
+      setTimeout(()=>burst(.9,500,.2,'lowpass',160),1500);
+    },
+    snore(){[0,1.7].forEach(d=>setTimeout(()=>{burst(.75,340,.26,'lowpass',120);tone(68,.7,.12,'sawtooth',56);},d*1000));},
     twang(){tone(760,.1,.05,'sawtooth',170);},
     draw(){tone(240,.55,.045,'triangle',420);},
     cry(){tone(1900,.42,.05,'triangle',1050);setTimeout(()=>tone(1700,.5,.04,'triangle',900),260);},
